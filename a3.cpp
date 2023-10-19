@@ -72,9 +72,9 @@ void Queue_LL::dequeue()
     {
         throw runtime_error("dequeue: queue is empty");
     }
-    Node* temp = frnt->next;
+    Node *temp = frnt->next;
     delete frnt;
-    frnt = temp;    
+    frnt = temp;
 }
 
 const Announcement &Queue_LL::front() const
@@ -118,24 +118,22 @@ Queue_LL::~Queue_LL()
     }
 }
 
-
-
 class JingleNet
 {
 private:
-    
     Queue_LL Santa;
     Queue_LL Reindeer;
     Queue_LL Elf2;
     Queue_LL Elf1;
     Queue_LL Snowman;
     // point of entry of the commands
-    void entry(const string&);
+    void entry(const string &);
     // now the 4 methods for 4 commands
-    void send(const string&, const Rank& , const string&);
-    void remove_all(const string&);
-    void promote_announcements(const string&);
-    void announce(const int&);
+    void send(const string &, const Rank &, const string &);
+    void remove_all(const string &);
+    void promote_announcements(const string &);
+    void announce(const int &);
+
 public:
     JingleNet();
     ~JingleNet();
@@ -149,22 +147,45 @@ JingleNet::~JingleNet()
 {
 }
 
-void JingleNet::entry(const string& command)
+void JingleNet::entry(const string &command)
 {
     if (command.find("SEND") != string::npos)
     {
-        string* arr = new string[3];
-        command.erase(0,4);
-        for (int i = 0; i < 3; i++)
+        string cmnd(command);
+        string *arr = new string[3];
+        cmnd.erase(0, 5);
+        for (int i = 0; i < 2; i++)
         {
-            // int index = 
+            int index = cmnd.find_first_of(" ");
+            arr[i] = cmnd.substr(0, index);
+            cmnd.erase(0, index + 1);
         }
-        
+        send(arr[0], to_rank(arr[1]), cmnd);
+    }
+    else if (command.find("REMOVE_ALL") != string::npos)
+    {
+        string c(command);
+        c.erase(0, 11);
+        remove_all(c);
+    }
+    else if (command.find("PROMOTE_ANNOUNCEMENTS") != string::npos)
+    {
+        string c(command);
+        c.erase(0, 22);
+        promote_announcements(c);
+    }
+    else if (command.find("ANNOUNCE") != string::npos)
+    {
+        string c(command);
+        c.erase(0, 9);
+        int n = stoi(c);
+        announce(n);
+    }
+    else
+    {
+        throw runtime_error("invalid command: in the else block");
     }
 }
-
-
-
 
 int main(int argc, char *argv[])
 {
