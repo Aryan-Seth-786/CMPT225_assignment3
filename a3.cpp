@@ -42,64 +42,127 @@ class Node
 private:
 public:
     Announcement ann;
-    Node* next;
-// constructors
-    Node(const string &sender_name, Rank rank, const string &text, Node* nxt = nullptr) : ann(sender_name,rank,text) , next(nxt) {}
-    Node(const Announcement &other, Node* nxt = nullptr) : ann(other) , next (nxt) {}
-    Node(string line, Node* nxt = nullptr) : ann(line), next(nxt) {}
-    
-
+    Node *next;
+    // constructors
+    Node(const string &sender_name, Rank rank, const string &text, Node *nxt = nullptr) : ann(sender_name, rank, text), next(nxt) {}
+    Node(const Announcement &other, Node *nxt = nullptr) : ann(other), next(nxt) {}
+    Node(string line, Node *nxt = nullptr) : ann(line), next(nxt) {}
 };
 
 class Queue_LL : public Queue_base<Announcement>
 {
 private:
-
-
-int sz;
-Node* front;
-Node* back;
-
+    int sz;
+    Node *frnt;
+    Node *back;
 
 public:
     Queue_LL();
     ~Queue_LL();
 
-    int size() { return sz; }
+    int size() const { return sz; }
     void enqueue(const Announcement &item);
+    const Announcement &front() const;
+    void dequeue();
 };
+// removes the item at the front of the queue
+void Queue_LL::dequeue()
+{
+    if (frnt == nullptr)
+    {
+        throw runtime_error("dequeue: queue is empty");
+    }
+    Node* temp = frnt->next;
+    delete frnt;
+    frnt = temp;    
+}
+
+const Announcement &Queue_LL::front() const
+{
+    if (frnt == nullptr && back != nullptr)
+    {
+        throw runtime_error("frnt == nullptr && back != nullptr");
+    }
+    if (frnt == nullptr)
+    {
+        throw runtime_error("front: queue is empty");
+    }
+    return frnt->ann;
+}
 
 // add item to the back of the queue
-void Queue_LL::enqueue(const Announcement & item) 
+void Queue_LL::enqueue(const Announcement &item)
 {
-    Node* temp = new Node(item,nullptr);
-    if ((front == nullptr) && (back == nullptr))
+    Node *temp = new Node(item, nullptr);
+    if ((frnt == nullptr) && (back == nullptr))
     {
         back = temp;
-        front = back;
+        frnt = back;
         return;
     }
     back->next = temp;
     back = temp;
-    
 }
 
-
-
-Queue_LL::Queue_LL() : sz(0), front(nullptr), back(nullptr)
+Queue_LL::Queue_LL() : sz(0), frnt(nullptr), back(nullptr)
 {
 }
 
 Queue_LL::~Queue_LL()
 {
-    while (front != nullptr)
+    while (frnt != nullptr)
     {
-        Node* temp = front->next;
-        delete front;
-        front = temp;    
+        Node *temp = frnt->next;
+        delete frnt;
+        frnt = temp;
     }
-    
 }
+
+
+
+class JingleNet
+{
+private:
+    
+    Queue_LL Santa;
+    Queue_LL Reindeer;
+    Queue_LL Elf2;
+    Queue_LL Elf1;
+    Queue_LL Snowman;
+    // point of entry of the commands
+    void entry(const string&);
+    // now the 4 methods for 4 commands
+    void send(const string&, const Rank& , const string&);
+    void remove_all(const string&);
+    void promote_announcements(const string&);
+    void announce(const int&);
+public:
+    JingleNet();
+    ~JingleNet();
+};
+
+JingleNet::JingleNet()
+{
+}
+
+JingleNet::~JingleNet()
+{
+}
+
+void JingleNet::entry(const string& command)
+{
+    if (command.find("SEND") != string::npos)
+    {
+        string* arr = new string[3];
+        command.erase(0,4);
+        for (int i = 0; i < 3; i++)
+        {
+            // int index = 
+        }
+        
+    }
+}
+
 
 
 
