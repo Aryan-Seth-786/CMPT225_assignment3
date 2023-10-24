@@ -126,15 +126,18 @@ private:
     Queue_LL Elf2;
     Queue_LL Elf1;
     Queue_LL Snowman;
-    // point of entry of the commands
-    void entry(const string &);
     // now the 4 methods for 4 commands
     void send(const string &, const Rank &, const string &);
     void remove_all(const string &);
     void promote_announcements(const string &);
     void announce(const int &);
+    // helper functions
+    void remove_from_queue(Queue_LL& q, const string& val);
+    void promote_announcement_from_queue(const string&, Queue_LL&, Queue_LL& );
 
 public:
+    // point of entry of the commands
+    void entry(const string &);
     JingleNet();
     ~JingleNet();
 };
@@ -152,7 +155,7 @@ void JingleNet::entry(const string &command)
     if (command.find("SEND") != string::npos)
     {
         string cmnd(command);
-        string *arr = new string[3];
+        string arr[3];
         cmnd.erase(0, 5);
         for (int i = 0; i < 2; i++)
         {
@@ -161,6 +164,7 @@ void JingleNet::entry(const string &command)
             cmnd.erase(0, index + 1);
         }
         send(arr[0], to_rank(arr[1]), cmnd);
+        
     }
     else if (command.find("REMOVE_ALL") != string::npos)
     {
@@ -187,6 +191,148 @@ void JingleNet::entry(const string &command)
     }
 }
 
+void JingleNet::send(const string &username, const Rank &rank, const string &message)
+{
+    Announcement temp(username,rank,message);
+    if (rank == Rank::SNOWMAN)
+    {
+        Snowman.enqueue(temp);
+    }
+    else if (rank == Rank::ELF1)
+    {
+        Elf1.enqueue(temp);
+    }
+    else if (rank == Rank::ELF2)
+    {
+        Elf2.enqueue(temp);
+    }
+    else if (rank == Rank::REINDEER)
+    {
+        Reindeer.enqueue(temp);
+    }
+    else if (rank == Rank::SANTA)
+    {
+        Santa.enqueue(temp);
+    }
+    else
+    {
+        throw runtime_error("invalid rank: in the else block");
+    }
+    
+    
+    
+    
+}
+
+void JingleNet::remove_all(const string& username)
+{
+    remove_from_queue(Santa,username);
+    remove_from_queue(Reindeer,username);
+    remove_from_queue(Elf2,username);
+    remove_from_queue(Elf1,username);
+    remove_from_queue(Snowman,username);
+}
+
+void JingleNet::remove_from_queue(Queue_LL& q, const string& val)
+{
+    Queue_LL temp;
+    while(q.size() != 0)
+    {
+        Announcement t = q.front();
+        q.dequeue();
+        temp.enqueue(t);
+    }
+    while (temp.size() != 0)
+    {
+        Announcement t = temp.front();
+        temp.dequeue();
+        if (t.get_sender_name() == val)
+        {
+            continue;
+        }
+        q.enqueue(t);
+    }
+    
+}
+
+
+void JingleNet::promote_announcements(const string & username)
+{
+    promote_announcement_from_queue(username,Reindeer,Santa);
+    promote_announcement_from_queue(username,Elf2,Reindeer);
+    promote_announcement_from_queue(username,Elf1,Elf2);
+    promote_announcement_from_queue(username,Snowman,Elf1);
+}
+void JingleNet::promote_announcement_from_queue(const string& username, Queue_LL& q1, Queue_LL& q2)
+{
+    Queue_LL temp;
+    while (q1.size() != 0)
+    {
+        Announcement t = q1.front();   
+        q1.dequeue();
+        if (t.get_sender_name() != username)
+        {
+            temp.enqueue(t);
+            continue;
+        }
+        q2.enqueue(t);
+        
+    }
+    while (temp.size() != 0)
+    {
+        Announcement t = temp.front();
+        temp.dequeue();
+        q1.enqueue(t);
+    }
+    
+    
+    
+}
+
+
+void JingleNet::announce(const int & count)
+{
+    int temp = 0;
+    while (Santa.size() != 0 && temp != count)
+    {
+        Announcement a = Santa.front();
+        jnet.announce(a);
+        Santa.dequeue();
+        temp++;
+    }
+    while (Reindeer.size() != 0 && temp != count)
+    {
+        Announcement a = Reindeer.front();
+        jnet.announce(a);
+        Reindeer.dequeue();
+        temp++;
+    }
+    while (Elf2.size() != 0 && temp != count)
+    {
+        Announcement a = Elf2.front();
+        jnet.announce(a);
+        Elf2.dequeue();
+        temp++;
+    }
+    while (Elf1.size() != 0 && temp != count)
+    {
+        Announcement a = Elf1.front();
+        jnet.announce(a);
+        Elf1.dequeue();
+        temp++;
+    }
+    while (Snowman.size() != 0 && temp != count)
+    {
+        Announcement a = Snowman.front();
+        jnet.announce(a);
+        Snowman.dequeue();
+        temp++;
+    }
+
+    
+}
+
+
 int main(int argc, char *argv[])
 {
     if (argc != 2)
@@ -197,6 +343,14 @@ int main(int argc, char *argv[])
 
     // making the file stream of the argument given in the command line
     ifstream ifile(argv[1]);
+    string line;
+    JingleNet jinglenet;
+    while (getline(ifile,line))
+    {
+        jinglenet.entry(line);
+    }
+    ifile.close();
+    
 
     return 0;
 }
