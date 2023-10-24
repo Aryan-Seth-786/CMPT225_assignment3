@@ -57,6 +57,7 @@ private:
     Node *back;
 
 public:
+    Rank rank;
     Queue_LL();
     ~Queue_LL();
 
@@ -75,6 +76,11 @@ void Queue_LL::dequeue()
     Node *temp = frnt->next;
     delete frnt;
     frnt = temp;
+    if (frnt == nullptr)
+    {
+        back = nullptr;
+    }
+    sz--;
 }
 
 const Announcement &Queue_LL::front() const
@@ -98,13 +104,15 @@ void Queue_LL::enqueue(const Announcement &item)
     {
         back = temp;
         frnt = back;
+        sz++;
         return;
     }
     back->next = temp;
     back = temp;
+    sz++;
 }
 
-Queue_LL::Queue_LL() : sz(0), frnt(nullptr), back(nullptr)
+Queue_LL::Queue_LL() : sz(0), frnt(nullptr), back(nullptr), rank(Rank::SNOWMAN)
 {
 }
 
@@ -115,6 +123,7 @@ Queue_LL::~Queue_LL()
         Node *temp = frnt->next;
         delete frnt;
         frnt = temp;
+        sz--;
     }
 }
 
@@ -132,8 +141,8 @@ private:
     void promote_announcements(const string &);
     void announce(const int &);
     // helper functions
-    void remove_from_queue(Queue_LL& q, const string& val);
-    void promote_announcement_from_queue(const string&, Queue_LL&, Queue_LL& );
+    void remove_from_queue(Queue_LL &q, const string &val);
+    void promote_announcement_from_queue(const string &, Queue_LL &, Queue_LL &);
 
 public:
     // point of entry of the commands
@@ -144,6 +153,11 @@ public:
 
 JingleNet::JingleNet()
 {
+    Santa.rank = Rank::SANTA;
+    Reindeer.rank = Rank::REINDEER;
+    Elf2.rank = Rank::ELF2;
+    Elf1.rank = Rank::ELF1;
+    Snowman.rank = Rank::SNOWMAN;
 }
 
 JingleNet::~JingleNet()
@@ -164,7 +178,6 @@ void JingleNet::entry(const string &command)
             cmnd.erase(0, index + 1);
         }
         send(arr[0], to_rank(arr[1]), cmnd);
-        
     }
     else if (command.find("REMOVE_ALL") != string::npos)
     {
@@ -193,7 +206,7 @@ void JingleNet::entry(const string &command)
 
 void JingleNet::send(const string &username, const Rank &rank, const string &message)
 {
-    Announcement temp(username,rank,message);
+    Announcement temp(username, rank, message);
     if (rank == Rank::SNOWMAN)
     {
         Snowman.enqueue(temp);
@@ -218,25 +231,21 @@ void JingleNet::send(const string &username, const Rank &rank, const string &mes
     {
         throw runtime_error("invalid rank: in the else block");
     }
-    
-    
-    
-    
 }
 
-void JingleNet::remove_all(const string& username)
+void JingleNet::remove_all(const string &username)
 {
-    remove_from_queue(Santa,username);
-    remove_from_queue(Reindeer,username);
-    remove_from_queue(Elf2,username);
-    remove_from_queue(Elf1,username);
-    remove_from_queue(Snowman,username);
+    remove_from_queue(Santa, username);
+    remove_from_queue(Reindeer, username);
+    remove_from_queue(Elf2, username);
+    remove_from_queue(Elf1, username);
+    remove_from_queue(Snowman, username);
 }
 
-void JingleNet::remove_from_queue(Queue_LL& q, const string& val)
+void JingleNet::remove_from_queue(Queue_LL &q, const string &val)
 {
     Queue_LL temp;
-    while(q.size() != 0)
+    while (q.size() != 0)
     {
         Announcement t = q.front();
         q.dequeue();
@@ -252,45 +261,34 @@ void JingleNet::remove_from_queue(Queue_LL& q, const string& val)
         }
         q.enqueue(t);
     }
-    
 }
 
-
-void JingleNet::promote_announcements(const string & username)
+void JingleNet::promote_announcements(const string &username)
 {
-    promote_announcement_from_queue(username,Reindeer,Santa);
-    promote_announcement_from_queue(username,Elf2,Reindeer);
-    promote_announcement_from_queue(username,Elf1,Elf2);
-    promote_announcement_from_queue(username,Snowman,Elf1);
+    promote_announcement_from_queue(username, Reindeer, Santa);
+    promote_announcement_from_queue(username, Elf2, Reindeer);
+    promote_announcement_from_queue(username, Elf1, Elf2);
+    promote_announcement_from_queue(username, Snowman, Elf1);
 }
-void JingleNet::promote_announcement_from_queue(const string& username, Queue_LL& q1, Queue_LL& q2)
+void JingleNet::promote_announcement_from_queue(const string &username, Queue_LL &q1, Queue_LL &q2)
 {
-    Queue_LL temp;
-    while (q1.size() != 0)
+    const int times_to_run = q1.size();
+    for (int i = 0; i < times_to_run; i++)
     {
-        Announcement t = q1.front();   
+        Announcement t = q1.front();
         q1.dequeue();
         if (t.get_sender_name() != username)
         {
-            temp.enqueue(t);
+            q1.enqueue(t);
             continue;
         }
-        q2.enqueue(t);
-        
+        // modify the announcement to promote it.
+        Announcement n(t.get_sender_name(), q2.rank, t.get_text());
+        q2.enqueue(n);
     }
-    while (temp.size() != 0)
-    {
-        Announcement t = temp.front();
-        temp.dequeue();
-        q1.enqueue(t);
-    }
-    
-    
-    
 }
 
-
-void JingleNet::announce(const int & count)
+void JingleNet::announce(const int &count)
 {
     int temp = 0;
     while (Santa.size() != 0 && temp != count)
@@ -328,10 +326,7 @@ void JingleNet::announce(const int & count)
         Snowman.dequeue();
         temp++;
     }
-
-    
 }
-
 
 int main(int argc, char *argv[])
 {
@@ -345,12 +340,11 @@ int main(int argc, char *argv[])
     ifstream ifile(argv[1]);
     string line;
     JingleNet jinglenet;
-    while (getline(ifile,line))
+    while (getline(ifile, line))
     {
         jinglenet.entry(line);
     }
     ifile.close();
-    
 
     return 0;
 }
